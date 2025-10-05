@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REST API Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        .calculator {
+            background-color: #333;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .display {
+            background-color: #000;
+            color: #fff;
+            font-size: 2em;
+            text-align: right;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            min-height: 40px;
+            word-wrap: break-word;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        button {
+            font-size: 1.2em;
+            padding: 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .number, .equals {
+            background-color: #666;
+            color: white;
+        }
+
+        .number:hover, .equals:hover {
+            background-color: #777;
+        }
+
+        .operation {
+            background-color: #ff9500;
+            color: white;
+        }
+
+        .operation:hover {
+            background-color: #ffad33;
+        }
+
+        .clear {
+            background-color: #a6a6a6;
+            color: black;
+        }
+
+        .clear:hover {
+            background-color: #b3b3b3;
+        }
+
+        .zero {
+            grid-column: span 2;
+        }
+
+        .status {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="status" id="status">Ready</div>
+        <div class="display" id="display">0</div>
+        <div class="buttons">
+            <button class="clear" onclick="clearCalculator()">C</button>
+            <button class="clear" onclick="clearCalculator()">±</button>
+            <button class="clear" onclick="clearCalculator()">%</button>
+            <button class="operation" onclick="operation('/')" data-op="/">÷</button>
+            
+            <button class="number" onclick="inputNumber(7)">7</button>
+            <button class="number" onclick="inputNumber(8)">8</button>
+            <button class="number" onclick="inputNumber(9)">9</button>
+            <button class="operation" onclick="operation('*')" data-op="*">×</button>
+            
+            <button class="number" onclick="inputNumber(4)">4</button>
+            <button class="number" onclick="inputNumber(5)">5</button>
+            <button class="number" onclick="inputNumber(6)">6</button>
+            <button class="operation" onclick="operation('-')" data-op="-">−</button>
+            
+            <button class="number" onclick="inputNumber(1)">1</button>
+            <button class="number" onclick="inputNumber(2)">2</button>
+            <button class="number" onclick="inputNumber(3)">3</button>
+            <button class="operation" onclick="operation('+')" data-op="+">+</button>
+            
+            <button class="number zero" onclick="inputNumber(0)">0</button>
+            <button class="number" onclick="inputDecimal()">.</button>
+            <button class="equals" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        // Update display
+        function updateDisplay(state) {
+            document.getElementById('display').textContent = state.display;
+            document.getElementById('status').textContent = 
+                state.operation ? `${state.completedValue} ${state.operation} ?` : 'Ready';
+        }
+
+        // Handle API responses
+        function handleResponse(response) {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Network response was not ok');
+        }
+
+        // Input a number
+        async function inputNumber(digit) {
+            try {
+                const response = await fetch('/api/calculator/number', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ digit })
+                });
+                
+                const state = await handleResponse(response);
+                updateDisplay(state);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('status').textContent = 'Error occurred';
+            }
+        }
+
+        // Input an operation
+        async function operation(op) {
+            try {
+                const response = await fetch('/api/calculator/operation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ operation: op })
+                });
+                
+                const state = await handleResponse(response);
+                updateDisplay(state);
+                
+                // Visual feedback for selected operation
+                document.querySelectorAll('.operation').forEach(btn => {
+                    btn.style.backgroundColor = btn.dataset.op === op ? '#ffad33' : '#ff9500';
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('status').textContent = 'Error occurred';
+            }
+        }
+
+        // Calculate result
+        async function calculate() {
+            try {
+                const response = await fetch('/api/calculator/equals', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const state = await handleResponse(response);
+                updateDisplay(state);
+                
+                // Reset operation button colors
+                document.querySelectorAll('.operation').forEach(btn => {
+                    btn.style.backgroundColor = '#ff9500';
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('status').textContent = 'Error occurred';
+            }
+        }
+
+        // Clear calculator
+        async function clearCalculator() {
+            try {
+                const response = await fetch('/api/calculator/clear', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const state = await handleResponse(response);
+                updateDisplay(state);
+                
+                // Reset operation button colors
+                document.querySelectorAll('.operation').forEach(btn => {
+                    btn.style.backgroundColor = '#ff9500';
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('status').textContent = 'Error occurred';
+            }
+        }
+
+        // Handle decimal point (bonus feature)
+        async function inputDecimal() {
+            // For now, just treat it as a regular character
+            // You could extend the backend to handle decimals properly
+            console.log('Decimal not implemented in backend yet');
+        }
+
+        // Initialize calculator state on page load
+        async function initialize() {
+            try {
+                const response = await fetch('/api/calculator');
+                const state = await handleResponse(response);
+                updateDisplay(state);
+            } catch (error) {
+                console.error('Error initializing:', error);
+                document.getElementById('status').textContent = 'Failed to connect to server';
+            }
+        }
+
+        // Keyboard support (bonus feature)
+        document.addEventListener('keydown', function(event) {
+            const key = event.key;
+            
+            if (key >= '0' && key <= '9') {
+                inputNumber(parseInt(key));
+            } else if (key === '+') {
+                operation('+');
+            } else if (key === '-') {
+                operation('-');
+            } else if (key === '*') {
+                operation('*');
+            } else if (key === '/') {
+                event.preventDefault(); // Prevent browser search
+                operation('/');
+            } else if (key === 'Enter' || key === '=') {
+                calculate();
+            } else if (key === 'Escape' || key === 'c' || key === 'C') {
+                clearCalculator();
+            }
+        });
+
+        // Initialize when page loads
+        window.onload = initialize;
+    </script>
+</body>
+</html>
