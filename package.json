@@ -1,7 +1,7 @@
 {
   "name": "ts-calculator",
   "version": "1.0.0",
-  "description": "``` npm init -y",
+  "description": "TypeScript calculator with Express server, REST API",
   "main": "server.js",
   "scripts": {
     "dev": "nodemon --exec ts-node server.ts",
